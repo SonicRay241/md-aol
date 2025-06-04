@@ -65,3 +65,4 @@ if search_btn:
 
         else:
             st.error("No results", icon="😔")
+
