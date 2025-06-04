@@ -1,0 +1,11 @@
+# Python Environments
+.venv/
+
+# Python Caches
+__pycache__/
+
+# Environment Variables
+.env
+
+# Model files
+model/*.pkl
