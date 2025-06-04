@@ -3,22 +3,40 @@ import joblib
 import requests
 import dotenv
 import os
+from io import BytesIO
 
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 # Load Env
 dotenv.load_dotenv()
-model_url = os.getenv("MODEL_URL")
+model_id = os.getenv("MODEL_ID")
 
-# Download the file
-response = requests.get(model_url)
-with open('/model/model_bundle.pkl', 'wb') as f:
-    f.write(response.content)
+def download_from_gdrive(file_id):
+    session = requests.Session()
+    base_url = "https://drive.google.com/uc?export=download"
 
-# Unpack
-model_bundle = joblib.load("./model/model_bundle.pkl")
+    # Initial request to get confirm token
+    response = session.get(base_url, params={'id': file_id}, stream=True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(base_url, params=params, stream=True)
+
+    return response.content
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+
+content = download_from_gdrive(model_id)
+model_bundle = joblib.load(BytesIO(content))
 
 # Init
 app = FastAPI()
