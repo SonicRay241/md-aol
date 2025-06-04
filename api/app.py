@@ -6,6 +6,18 @@ import os
 
 from model.recommender import Recommender
 
+def download_model(url: str):
+    response = requests.get(model_url)
+
+    file_data = BytesIO()
+    for chunk in response.iter_content(stream=True):
+        i += 1
+        if chunk:  # filter out keep-alive new chunks
+            file_data.write(chunk)
+    
+    file_data.seek(0)
+    return file_data
+
 # Load Env
 dotenv.load_dotenv()
 model_url = os.getenv("MODEL_URL")
@@ -13,10 +25,7 @@ file_path = "./model/model_bundle.pkl"
 
 # Download the file if not available
 if not os.path.isfile(file_path):
-    response = requests.get(model_url)
-
-    with open(file_path, 'wb') as f:
-        f.write(response.content)
+    file_path = download_model(model_url)
 
 # Unpack
 model_bundle: Recommender = Recommender.load(file_path)
@@ -36,7 +45,7 @@ def search(
     country: str | None = None
 ):
     rec = model_bundle.recommend(title, top_n=5, genre=genre, show_type=show_type, country=country)
-    
+
     return {
         "results": rec[['title', 'type', 'listed_in', 'country']]
     }
