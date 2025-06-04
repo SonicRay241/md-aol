@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import joblib
 import requests
 import dotenv
@@ -21,17 +22,26 @@ def download_model(url: str):
 # Load Env
 dotenv.load_dotenv()
 model_url = os.getenv("MODEL_URL")
-file_path = "./model/model_bundle.pkl"
 
-# Download the file if not available
-if not os.path.isfile(file_path):
-    file_path = download_model(model_url)
+models = {}
 
-# Unpack
-model_bundle: Recommender = Recommender.load(file_path)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    file_path = "./model/model_bundle.pkl"
+
+    # Download the file if not available
+    if not os.path.isfile(file_path):
+        file_path = download_model(model_url)
+
+    # Unpack
+    models["recommender"] = Recommender.load(file_path)
+
+    yield
+    # Clean up the ML models and release the resources
+    models.clear()
 
 # Init
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def read_root():
@@ -44,7 +54,7 @@ def search(
     show_type: str | None = None,
     country: str | None = None
 ):
-    rec = model_bundle.recommend(title, top_n=5, genre=genre, show_type=show_type, country=country)
+    rec = models["recommender"].recommend(title, top_n=5, genre=genre, show_type=show_type, country=country)
 
     return {
         "results": rec[['title', 'type', 'listed_in', 'country']]
