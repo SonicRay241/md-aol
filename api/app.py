@@ -58,7 +58,7 @@ def search(
     rec = models["recommender"].recommend(title, top_n=5, genre=genre, show_type=show_type, country=country)
 
     return {
-        "results": rec[['title', 'type', 'listed_in', 'country']]
+        "results": rec[['title', 'type', 'listed_in', 'country']] if rec else None
     }
 
 if __name__ == "__main__":
