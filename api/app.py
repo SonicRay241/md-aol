@@ -1,6 +1,6 @@
 from fastapi import FastAPI
+import uvicorn
 from contextlib import asynccontextmanager
-import joblib
 from io import BytesIO
 import requests
 import dotenv
@@ -60,3 +60,6 @@ def search(
     return {
         "results": rec[['title', 'type', 'listed_in', 'country']]
     }
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8080)
